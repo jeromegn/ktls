@@ -204,9 +204,13 @@ struct Cmsg<const N: usize> {
 
 impl<const N: usize> Cmsg<N> {
     fn new(level: i32, typ: i32, data: [u8; N]) -> Self {
+        #[cfg(target_os = "linux")]
+        let cmsg_len = memoffset::offset_of!(Self, data) + N;
+        #[cfg(not(target_os = "linux"))]
+        let cmsg_len = (memoffset::offset_of!(Self, data) + N) as u32;
         Self {
             hdr: libc::cmsghdr {
-                cmsg_len: (memoffset::offset_of!(Self, data) + N) as u32,
+                cmsg_len,
                 cmsg_level: level,
                 cmsg_type: typ,
             },
